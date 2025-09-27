@@ -1,0 +1,1 @@
+This repository contains all the code and external files I'll be using for the final year project of my bachelor degree in Physics with Astronomy at DCU. I'll use this repository to keep track of progress in code and changes throughout the duration of the project

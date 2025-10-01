@@ -9,11 +9,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.patches import Circle
+from datetime import datetime
 
 # Load the data from the .TAB file
 df = pd.read_csv('ORB14_EUR_EPHIO.TAB', delim_whitespace=True, header=None)
 
 # Assign all the columns to a variable
+df[0] = pd.to_datetime(df[0], errors='coerce')
+df['time'] = df[0].dt.strftime('%H:%M')
 time = df[0].to_numpy()  # First column for time
 BX = df[1].to_numpy()   # Second column for Bx
 BY = df[2].to_numpy()   # Third column for By
@@ -33,6 +36,8 @@ timestamps = pd.to_datetime(time)
 start_time = timestamps[0]
 time_diff = timestamps - start_time  # This will give a Timedelta
 timeUTC = time_diff.total_seconds() / 3600  # Convert to hours
+
+#timeUTC = df['time']
 
 # Set up the figure with multiple subplots (5 rows, 1 column for magnetic field plots and distance)
 fig, axs = plt.subplots(5, 1, figsize=(10, 20), sharex=True)
@@ -82,30 +87,30 @@ fig2, axs2 = plt.subplots(1, 3, figsize=(18, 6))
 fig2.suptitle('Trajectory of Galileo Flyby', y=0.97)
 
 # Plot the trajectory in the xy-plane (no gradient, simple scatter plot)
-axs2[0].scatter(x, y, color='blue', s=10, label='Trajectory (xy-plane)')
+axs2[0].scatter(x, y, color='black', s=10, label='Trajectory (xy-plane)')
 axs2[0].set_xlabel('X ($R_E$)')
 axs2[0].set_ylabel('Y ($R_E$)')
-moon_circle = Circle((0, 0), 1, color='orange', fill=False, linewidth=2, label='Europa')  # Create a new moon circle for this plot
+moon_circle = Circle((0, 0), 1, color='black', fill=False, linewidth=2, label='Europa')  # Create a new moon circle for this plot
 axs2[0].add_patch(moon_circle)  # Add the moon
 axs2[0].set_xlim([-6.5, 6.5])  # Set the range of x-axis from -6 to 6
 axs2[0].set_ylim([-6.5, 6.5])  # Set the range of y-axis from -6 to 6
 axs2[0].grid(True)  # Add grid to the first 3D projection plot
 
 # Plot the trajectory in the yz-plane (no gradient, simple scatter plot)
-axs2[1].scatter(y, z, color='red', s=10, label='Trajectory (yz-plane)')
+axs2[1].scatter(y, z, color='black', s=10, label='Trajectory (yz-plane)')
 axs2[1].set_xlabel('Y ($R_E$)')
 axs2[1].set_ylabel('Z ($R_E$)')
-moon_circle = Circle((0, 0), 1, color='orange', fill=False, linewidth=2, label='Europa')  # Create a new moon circle for this plot
+moon_circle = Circle((0, 0), 1, color='black', fill=False, linewidth=2, label='Europa')  # Create a new moon circle for this plot
 axs2[1].add_patch(moon_circle)  # Add the moon
 axs2[1].set_xlim([-4, 4])  # Set the range of y-axis from -6 to 6
 axs2[1].set_ylim([-4, 4])  # Set the range of z-axis from -6 to 6
 axs2[1].grid(True)  # Add grid to the second 3D projection plot
 
 # Plot the trajectory in the xz-plane (no gradient, simple scatter plot)
-axs2[2].scatter(x, z, color='green', s=10, label='Trajectory (xz-plane)')
+axs2[2].scatter(x, z, color='black', s=10, label='Trajectory (xz-plane)')
 axs2[2].set_xlabel('X ($R_E$)')
 axs2[2].set_ylabel('Z ($R_E$)')
-moon_circle = Circle((0, 0), 1, color='orange', fill=False, linewidth=2, label='Europa')  # Create a new moon circle for this plot
+moon_circle = Circle((0, 0), 1, color='black', fill=False, linewidth=2, label='Europa')  # Create a new moon circle for this plot
 axs2[2].add_patch(moon_circle)  # Add the moon
 axs2[2].set_xlim([-6.5, 6.5])  # Set the range of x-axis from -6 to 6
 axs2[2].set_ylim([-6.5, 6.5])  # Set the range of z-axis from -6 to 6

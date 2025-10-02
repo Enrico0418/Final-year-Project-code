@@ -12,7 +12,7 @@ from matplotlib.patches import Circle
 from datetime import datetime
 
 # Load the data from the .TAB file
-df = pd.read_csv('ORB14_EUR_EPHIO.TAB', delim_whitespace=True, header=None)
+df = pd.read_csv('ORB04_EUR_EPHIO.TAB', delim_whitespace=True, header=None)
 
 # Assign all the columns to a variable
 df[0] = pd.to_datetime(df[0], errors='coerce')
@@ -36,6 +36,9 @@ timestamps = pd.to_datetime(time)
 start_time = timestamps[0]
 time_diff = timestamps - start_time  # This will give a Timedelta
 timeUTC = time_diff.total_seconds() / 3600  # Convert to hours
+
+flyby_duration_hours = (timeUTC[-1] - timeUTC[0])
+
 
 #timeUTC = df['time']
 
@@ -80,6 +83,7 @@ for i, ax in enumerate(axs):
     ax.axvline(x=closest_approach_time, color='black', linestyle='--', label='Closest Approach (CA)' if i == 0 else None)
 
 # Adjust layout for magnetic field and distance plots (remove extra space)
+axs[-1].set_xlim(0,flyby_duration_hours)
 plt.tight_layout()
 
 # Now, plot the 3D trajectory projections in a separate figure

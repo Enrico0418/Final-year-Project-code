@@ -211,6 +211,7 @@ axs[3].plot(time_sec/3600, B_fit, 'r--', label='Bz fit')
 axs[3].legend(); axs[3].set_ylabel('B (nT)')
 axs[3].set_xlabel('Time since start (hours)')
 
+axs[-1].set_xlim(0,flyby_duration_hours)
 plt.tight_layout()
 plt.show()
 
@@ -234,6 +235,8 @@ axs[2].legend(); axs[2].set_ylabel('Bz (nT)')
 
 axs[3].plot(time_sec/3600, B_res, 'm', label='Bz data')
 axs[3].legend(); axs[3].set_ylabel('B (nT)')
+
+axs[-1].set_xlim(0,flyby_duration_hours)
 
 plt.tight_layout()
 plt.show()

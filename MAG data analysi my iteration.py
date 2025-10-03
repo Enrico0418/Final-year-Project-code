@@ -10,9 +10,11 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.patches import Circle
 from datetime import datetime
+from numpy.polynomial import Polynomial
 
 # Load the data from the .TAB file
-df = pd.read_csv('ORB04_EUR_EPHIO.TAB', delim_whitespace=True, header=None)
+df = pd.read_csv('ORB14_EUR_EPHIO.TAB', sep='\s+', header=None)
+
 
 # Assign all the columns to a variable
 df[0] = pd.to_datetime(df[0], errors='coerce')
@@ -124,4 +126,114 @@ axs2[2].grid(True)  # Add grid to the third 3D projection plot
 plt.tight_layout()
 
 # Show both figures
+plt.show()
+
+# --- PARAMETERS ---
+X_min = 5   # half-window size in minutes (adjust as needed)
+Y = 1       # polynomial degree (adjust as needed)
+
+# --- TIME HANDLING ---
+# Convert times to seconds relative to start
+time_sec = (timestamps - start_time).total_seconds().to_numpy()
+
+# Closest approach (already computed)
+t_ca_sec = time_sec[np.argmin(distance_from_surface)]
+
+# Exclusion window
+delta_t = X_min * 60.0  # seconds
+mask = (time_sec < t_ca_sec - delta_t) | (time_sec > t_ca_sec + delta_t)
+
+# --- POLYNOMIAL FITS ---
+# Fit each component separately using only quiet parts
+coeffs_Bx = Polynomial.fit(time_sec[mask], BX[mask], deg=Y).convert().coef
+coeffs_By = Polynomial.fit(time_sec[mask], BY[mask], deg=Y).convert().coef
+coeffs_Bz = Polynomial.fit(time_sec[mask], BZ[mask], deg=Y).convert().coef
+
+# Evaluate fitted background over full time axis
+Bx_fit = np.polyval(coeffs_Bx[::-1], time_sec)  # reverse for np.polyval
+By_fit = np.polyval(coeffs_By[::-1], time_sec)
+Bz_fit = np.polyval(coeffs_Bz[::-1], time_sec)
+B_fit = np.sqrt(Bx_fit**2 + By_fit**2 + Bz_fit**2)
+
+# --- SPATIAL LENGTH OF EXCLUDED INTERVAL ---
+  # km/s (approx constant near CA)
+speed = 8 # in km/s
+
+R_E = 1560.8  # km
+
+# Radial distance from Europa's center (km) and altitude (km)
+r = np.sqrt(x**2 + y**2 + z**2) * R_E
+altitude = r - R_E
+
+# Exclusion window times
+t_start = t_ca_sec - delta_t
+t_end   = t_ca_sec + delta_t
+
+# Interpolate altitude and coordinates at exclusion start
+alt_start = np.interp(t_start, time_sec, altitude)
+x_start   = np.interp(t_start, time_sec, x)
+y_start   = np.interp(t_start, time_sec, y)
+z_start   = np.interp(t_start, time_sec, z)
+
+# Interpolate altitude and coordinates at exclusion end
+alt_end = np.interp(t_end, time_sec, altitude)
+x_end   = np.interp(t_end, time_sec, x)
+y_end   = np.interp(t_end, time_sec, y)
+z_end   = np.interp(t_end, time_sec, z)
+
+# Print results
+print("=== Exclusion Window Boundaries ===")
+print(f"Start: Altitude = {alt_start:.1f} km ({alt_start/R_E:.2f} R_E), "
+      f"Coords = ({x_start:.3f}, {y_start:.3f}, {z_start:.3f}) R_E")
+print(f"End:   Altitude = {alt_end:.1f} km ({alt_end/R_E:.2f} R_E), "
+      f"Coords = ({x_end:.3f}, {y_end:.3f}, {z_end:.3f}) R_E")
+
+
+
+
+# --- PLOT DIAGNOSTIC ---
+fig, axs = plt.subplots(4, 1, figsize=(10, 12), sharex=True)
+axs[0].plot(time_sec/3600, BX, 'k', label='Bx data')
+axs[0].plot(time_sec/3600, Bx_fit, 'r--', label='Bx fit')
+axs[0].legend(); axs[0].set_ylabel('Bx (nT)')
+
+axs[1].plot(time_sec/3600, BY, 'b', label='By data')
+axs[1].plot(time_sec/3600, By_fit, 'r--', label='By fit')
+axs[1].legend(); axs[1].set_ylabel('By (nT)')
+
+axs[2].plot(time_sec/3600, BZ, 'm', label='Bz data')
+axs[2].plot(time_sec/3600, Bz_fit, 'r--', label='Bz fit')
+axs[2].legend(); axs[2].set_ylabel('Bz (nT)')
+axs[2].set_xlabel('Time since start (hours)')
+
+axs[3].plot(time_sec/3600, BTot, 'm', label='Bz data')
+axs[3].plot(time_sec/3600, B_fit, 'r--', label='Bz fit')
+axs[3].legend(); axs[3].set_ylabel('B (nT)')
+axs[3].set_xlabel('Time since start (hours)')
+
+plt.tight_layout()
+plt.show()
+
+""" Residual calculations """
+
+Bx_res = BX-Bx_fit
+By_res = BY-By_fit
+Bz_res = BZ-Bz_fit
+B_res = BTot-B_fit
+
+# --- PLOT DIAGNOSTIC ---
+fig, axs = plt.subplots(4, 1, figsize=(10, 12), sharex=True)
+axs[0].plot(time_sec/3600, Bx_res, 'k', label='Bx data')
+axs[0].legend(); axs[0].set_ylabel('Bx (nT)')
+
+axs[1].plot(time_sec/3600, By_res, 'b', label='By data')
+axs[1].legend(); axs[1].set_ylabel('By (nT)')
+
+axs[2].plot(time_sec/3600, Bz_res, 'm', label='Bz data')
+axs[2].legend(); axs[2].set_ylabel('Bz (nT)')
+
+axs[3].plot(time_sec/3600, B_res, 'm', label='Bz data')
+axs[3].legend(); axs[3].set_ylabel('B (nT)')
+
+plt.tight_layout()
 plt.show()

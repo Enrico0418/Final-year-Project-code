@@ -13,7 +13,7 @@ from datetime import datetime
 from numpy.polynomial import Polynomial
 
 # Load the data from the .TAB file
-df = pd.read_csv('ORB14_EUR_EPHIO.TAB', sep='\s+', header=None)
+df = pd.read_csv('ORB04_EUR_EPHIO.TAB', sep='\s+', header=None)
 
 
 # Assign all the columns to a variable
@@ -206,8 +206,8 @@ axs[2].plot(time_sec/3600, Bz_fit, 'r--', label='Bz fit')
 axs[2].legend(); axs[2].set_ylabel('Bz (nT)')
 axs[2].set_xlabel('Time since start (hours)')
 
-axs[3].plot(time_sec/3600, BTot, 'm', label='Bz data')
-axs[3].plot(time_sec/3600, B_fit, 'r--', label='Bz fit')
+axs[3].plot(time_sec/3600, BTot, 'r', label='B data')
+axs[3].plot(time_sec/3600, B_fit, 'r--', label='B fit')
 axs[3].legend(); axs[3].set_ylabel('B (nT)')
 axs[3].set_xlabel('Time since start (hours)')
 
@@ -233,7 +233,7 @@ axs[1].legend(); axs[1].set_ylabel('By (nT)')
 axs[2].plot(time_sec/3600, Bz_res, 'm', label='Bz data')
 axs[2].legend(); axs[2].set_ylabel('Bz (nT)')
 
-axs[3].plot(time_sec/3600, B_res, 'm', label='Bz data')
+axs[3].plot(time_sec/3600, B_res, 'r', label='B data')
 axs[3].legend(); axs[3].set_ylabel('B (nT)')
 
 axs[-1].set_xlim(0,flyby_duration_hours)

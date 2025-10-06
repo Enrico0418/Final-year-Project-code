@@ -8,13 +8,63 @@ Created on Sat Sep 27 15:30:55 2025
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import os
 from matplotlib.patches import Circle
-from datetime import datetime
 from numpy.polynomial import Polynomial
 
-# Load the data from the .TAB file
-df = pd.read_csv('ORB04_EUR_EPHIO.TAB', sep='\s+', header=None)
+flyby_file = input("\Enter flyby file").strip()
 
+Europa_list = {"ORB04_EUR_EPHIO.TAB", "ORB1_EUR_EPHIO.TAB", 
+               "ORB12_EUR_EPHIO.TAB", "ORB14_EUR_EPHIO.TAB", 
+               "ORB15_EUR_EPHIO.TAB", "ORB17_EUR_EPHIO.TAB", 
+               "ORB19_EUR_EPHIO.TAB", "ORB25_EUR_EPHIO.TAB", 
+               "ORB25_EUR_EPHIO.TAB",}
+Callisto_list = {"ORB03_CALL_CPHIO.TAB", "ORB09_CALL_CPHIO.TAB", 
+                 "ORB10_CALL_CPHIO.TAB", "ORB21_CALL_CPHIO.TAB", 
+                 "ORB22_CALL_CPHIO.TAB", "ORB23_CALL_CPHIO.TAB", 
+                 "ORB30_CALL_CPHIO.TAB"}
+Ganymede_list = {"ORB01_GAN_GPHIO.TAB", "ORB02_GAN_GPHIO.TAB", 
+                 "ORB07_GAN_GPHIO.TAB", "ORB08_GAN_GPHIO.TAB", 
+                 "ORB09_GAN_GPHIO.TAB", "ORB12_GAN_GPHIO.TAB", 
+                 "ORB28_GAN_GPHIO.TAB", "ORB29_GAN_GPHIO.TAB"}
+Io_list = {"ORB00_IO_IPHIO.TAB", "ORB24_IO_IPHIO.TAB", 
+           "ORB27_IO_IPHIO.TAB", "ORB31_IO_IPHIO.TAB", 
+           "ORB32_IO_IPHIO.TAB"}
+
+df = pd.read_csv(flyby_file, delim_whitespace=True, header=None)
+
+R_moon = 0
+
+if flyby_file in Europa_list:
+    R_moon = 1560.8 #km
+
+if flyby_file in Callisto_list:
+    R_moon = 2410.3 #km
+
+if flyby_file in Ganymede_list:
+    R_moon = 2631 #km
+
+if flyby_file in Io_list:
+    R_moon = 1821.6 #km
+
+base_name = os.path.basename(flyby_file)
+name_parts = os.path.splitext(base_name)[0].split('_')
+
+orbit_name = name_parts[0]
+moon_name = name_parts[1]
+
+orbit_number = ''.join(filter(str.isdigit, orbit_name))
+moon_full_names = {
+    "EUR": "Europa",
+    "IO": "Io",
+    "GAN": "Ganymede",
+    "CAL": "Callisto"
+}
+
+moon_full = moon_full_names.get(moon_name.upper(), moon_name.capitalize())
+
+# Final formatted title string
+title_label = f"Orbit {orbit_number} of {moon_full}"
 
 # Assign all the columns to a variable
 df[0] = pd.to_datetime(df[0], errors='coerce')
@@ -29,7 +79,7 @@ y = df[6].to_numpy()  # 2nd last column for y
 z = df[7].to_numpy()  # Last column for z
 
 # Calculate the distance from the surface of Europa
-distance_from_surface = np.sqrt(x**2 + y**2 + z**2) - 1  # Subtract Europa's radius (1)
+distance_from_surface = np.sqrt(x**2 + y**2 + z**2) - 1  # Distance from the surface, Europa centre of mass 0,0,0)
 
 # Convert the time to datetime (assuming it's already in a suitable format)
 timestamps = pd.to_datetime(time)
@@ -46,7 +96,7 @@ flyby_duration_hours = (timeUTC[-1] - timeUTC[0])
 
 # Set up the figure with multiple subplots (5 rows, 1 column for magnetic field plots and distance)
 fig, axs = plt.subplots(5, 1, figsize=(10, 20), sharex=True)
-fig.suptitle('Magnetic field measurments of Galileo MAG during ', y=0.99)
+fig.suptitle(f'Magnetic field measurments of Galileo during {title_label}', y=0.99)
 
 # Plot for Bx
 axs[0].plot(timeUTC, BX, label='Bx (nT)', color='black')
@@ -90,7 +140,7 @@ plt.tight_layout()
 
 # Now, plot the 3D trajectory projections in a separate figure
 fig2, axs2 = plt.subplots(1, 3, figsize=(18, 6))
-fig2.suptitle('Trajectory of Galileo Flyby', y=0.97)
+fig2.suptitle(f'Trajectory of Galileo Flyby {title_label}', y=0.97)
 
 # Plot the trajectory in the xy-plane (no gradient, simple scatter plot)
 axs2[0].scatter(x, y, color='black', s=10, label='Trajectory (xy-plane)')
@@ -159,11 +209,10 @@ B_fit = np.sqrt(Bx_fit**2 + By_fit**2 + Bz_fit**2)
   # km/s (approx constant near CA)
 speed = 8 # in km/s
 
-R_E = 1560.8  # km
 
 # Radial distance from Europa's center (km) and altitude (km)
-r = np.sqrt(x**2 + y**2 + z**2) * R_E
-altitude = r - R_E
+r = np.sqrt(x**2 + y**2 + z**2) * R_moon
+altitude = r - R_moon
 
 # Exclusion window times
 t_start = t_ca_sec - delta_t
@@ -183,15 +232,13 @@ z_end   = np.interp(t_end, time_sec, z)
 
 # Print results
 print("=== Exclusion Window Boundaries ===")
-print(f"Start: Altitude = {alt_start:.1f} km ({alt_start/R_E:.2f} R_E), "
-      f"Coords = ({x_start:.3f}, {y_start:.3f}, {z_start:.3f}) R_E")
-print(f"End:   Altitude = {alt_end:.1f} km ({alt_end/R_E:.2f} R_E), "
-      f"Coords = ({x_end:.3f}, {y_end:.3f}, {z_end:.3f}) R_E")
+print(f"Start: Altitude = {alt_start:.1f} km ({alt_start/R_moon:.2f} R units), "
+      f"Coords = ({x_start:.3f}, {y_start:.3f}, {z_start:.3f}) R units")
+print(f"End:   Altitude = {alt_end:.1f} km ({alt_end/R_moon:.2f} R units), "
+      f"Coords = ({x_end:.3f}, {y_end:.3f}, {z_end:.3f}) R units")
 
 
 
-
-# --- PLOT DIAGNOSTIC ---
 fig, axs = plt.subplots(4, 1, figsize=(10, 12), sharex=True)
 axs[0].plot(time_sec/3600, BX, 'k', label='Bx data')
 axs[0].plot(time_sec/3600, Bx_fit, 'r--', label='Bx fit')

@@ -12,9 +12,9 @@ import os
 from matplotlib.patches import Circle
 from numpy.polynomial import Polynomial
 
-flyby_file = input("\Enter flyby file").strip()
+flyby_file = input("Enter flyby file").strip()
 
-Europa_list = {"ORB04_EUR_EPHIO.TAB", "ORB1_EUR_EPHIO.TAB", 
+Europa_list = {"ORB04_EUR_EPHIO.TAB", "ORB11_EUR_EPHIO.TAB", 
                "ORB12_EUR_EPHIO.TAB", "ORB14_EUR_EPHIO.TAB", 
                "ORB15_EUR_EPHIO.TAB", "ORB17_EUR_EPHIO.TAB", 
                "ORB19_EUR_EPHIO.TAB", "ORB25_EUR_EPHIO.TAB", 
@@ -287,3 +287,21 @@ axs[-1].set_xlim(0,flyby_duration_hours)
 
 plt.tight_layout()
 plt.show()
+
+output_filename = f"Residuals_{title_label.replace(' ', '_')}.txt"
+
+# Prepare a dataframe to hold residuals
+residuals_data = {  # Convert seconds to hours
+    "Bx_residuals (nT)": Bx_res,
+    "By_residuals (nT)": By_res,
+    "Bz_residuals (nT)": Bz_res,
+    "B_residuals (nT)": B_res
+}
+
+# Create a DataFrame from the residuals
+residuals_df = pd.DataFrame(residuals_data)
+
+# Save the DataFrame to a .txt file
+residuals_df.to_csv(output_filename, sep='\t', index=False)
+
+print(f"Residuals saved to {output_filename}")

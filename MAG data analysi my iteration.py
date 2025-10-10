@@ -9,6 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
+from datetime import datetime
+import matplotlib.dates as mdates
 from matplotlib.patches import Circle
 from numpy.polynomial import Polynomial
 
@@ -67,9 +69,9 @@ moon_full = moon_full_names.get(moon_name.upper(), moon_name.capitalize())
 title_label = f"Orbit {orbit_number} of {moon_full}"
 
 # Assign all the columns to a variable
-df[0] = pd.to_datetime(df[0], errors='coerce')
-df['time'] = df[0].dt.strftime('%H:%M')
-time = df[0].to_numpy()  # First column for time
+df[0] = df[0].apply(lambda x: datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%f'))
+df['time'] = df[0].dt.strftime('%H:%M')  # Optional human-readable for table
+time = df[0].to_numpy()
 BX = df[1].to_numpy()   # Second column for Bx
 BY = df[2].to_numpy()   # Third column for By
 BZ = df[3].to_numpy()   # Fourth column for Bz
@@ -87,18 +89,20 @@ timestamps = pd.to_datetime(time)
 # Convert timestamps to UTC hours (relative to the start time)
 start_time = timestamps[0]
 time_diff = timestamps - start_time  # This will give a Timedelta
-timeUTC = time_diff.total_seconds() / 3600  # Convert to hours
-
-flyby_duration_hours = (timeUTC[-1] - timeUTC[0])
-
+timeUTC = mdates.date2num(df[0])
 
 #timeUTC = df['time']
 
 # Set up the figure with multiple subplots (5 rows, 1 column for magnetic field plots and distance)
 fig, axs = plt.subplots(5, 1, figsize=(10, 20), sharex=True)
-fig.suptitle(f'Magnetic field measurments of Galileo during {title_label}', y=0.99)
+fig.suptitle(f'Magnetic field measurments of Galileo during {title_label}')
+plt.tight_layout(pad=2.0)  # reduce padding between title and subplots
 
 # Plot for Bx
+axs[0].plot(timeUTC, BX, 'k', label='Bx (nT)')
+axs[0].xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+axs[0].xaxis.set_major_locator(mdates.MinuteLocator(byminute=range(0,60,5)))
+
 axs[0].plot(timeUTC, BX, label='Bx (nT)', color='black')
 axs[0].set_ylabel('Bx (nT)')
 axs[0].tick_params(axis='x', rotation=45)
@@ -125,7 +129,7 @@ axs[3].grid(True)  # Add grid to the fourth subplot
 # Plot for Distance from Europa's surface
 axs[4].plot(timeUTC, distance_from_surface, label='Distance from Europa surface (km)', color='blue')
 axs[4].set_xlabel('Time (UTC Hours)')
-axs[4].set_ylabel('Distance ($R_E$)')
+axs[4].set_ylabel('Distance From Surface($R_Moon$)')
 axs[4].tick_params(axis='x', rotation=45)
 axs[4].grid(True)  # Add grid to the fifth subplot
 
@@ -134,9 +138,7 @@ closest_approach_time = timeUTC[np.argmin(distance_from_surface)]  # Find time o
 for i, ax in enumerate(axs):
     ax.axvline(x=closest_approach_time, color='black', linestyle='--', label='Closest Approach (CA)' if i == 0 else None)
 
-# Adjust layout for magnetic field and distance plots (remove extra space)
-axs[-1].set_xlim(0,flyby_duration_hours)
-plt.tight_layout()
+
 
 # Now, plot the 3D trajectory projections in a separate figure
 fig2, axs2 = plt.subplots(1, 3, figsize=(18, 6))
@@ -144,8 +146,8 @@ fig2.suptitle(f'Trajectory of Galileo Flyby {title_label}', y=0.97)
 
 # Plot the trajectory in the xy-plane (no gradient, simple scatter plot)
 axs2[0].scatter(x, y, color='black', s=10, label='Trajectory (xy-plane)')
-axs2[0].set_xlabel('X ($R_E$)')
-axs2[0].set_ylabel('Y ($R_E$)')
+axs2[0].set_xlabel('X ($R_Moon$)')
+axs2[0].set_ylabel('Y ($R_Moon$)')
 moon_circle = Circle((0, 0), 1, color='black', fill=False, linewidth=2, label='Europa')  # Create a new moon circle for this plot
 axs2[0].add_patch(moon_circle)  # Add the moon
 axs2[0].set_xlim([-6.5, 6.5])  # Set the range of x-axis from -6 to 6
@@ -154,8 +156,8 @@ axs2[0].grid(True)  # Add grid to the first 3D projection plot
 
 # Plot the trajectory in the yz-plane (no gradient, simple scatter plot)
 axs2[1].scatter(y, z, color='black', s=10, label='Trajectory (yz-plane)')
-axs2[1].set_xlabel('Y ($R_E$)')
-axs2[1].set_ylabel('Z ($R_E$)')
+axs2[1].set_xlabel('Y ($R_Moon$)')
+axs2[1].set_ylabel('Z ($R_Moon$)')
 moon_circle = Circle((0, 0), 1, color='black', fill=False, linewidth=2, label='Europa')  # Create a new moon circle for this plot
 axs2[1].add_patch(moon_circle)  # Add the moon
 axs2[1].set_xlim([-4, 4])  # Set the range of y-axis from -6 to 6
@@ -164,8 +166,8 @@ axs2[1].grid(True)  # Add grid to the second 3D projection plot
 
 # Plot the trajectory in the xz-plane (no gradient, simple scatter plot)
 axs2[2].scatter(x, z, color='black', s=10, label='Trajectory (xz-plane)')
-axs2[2].set_xlabel('X ($R_E$)')
-axs2[2].set_ylabel('Z ($R_E$)')
+axs2[2].set_xlabel('X ($R_Moon$)')
+axs2[2].set_ylabel('Z ($R_Moon$)')
 moon_circle = Circle((0, 0), 1, color='black', fill=False, linewidth=2, label='Europa')  # Create a new moon circle for this plot
 axs2[2].add_patch(moon_circle)  # Add the moon
 axs2[2].set_xlim([-6.5, 6.5])  # Set the range of x-axis from -6 to 6
@@ -179,19 +181,24 @@ plt.tight_layout()
 plt.show()
 
 # --- PARAMETERS ---
-X_min = 5   # half-window size in minutes (adjust as needed)
-Y = 1       # polynomial degree (adjust as needed)
+X_min = 10   # half-window size in minutes (adjust as needed)
+Y = 1        # polynomial degree (adjust as needed)
 
 # --- TIME HANDLING ---
 # Convert times to seconds relative to start
 time_sec = (timestamps - start_time).total_seconds().to_numpy()
 
 # Closest approach (already computed)
-t_ca_sec = time_sec[np.argmin(distance_from_surface)]
+closest_idx = np.argmin(distance_from_surface)
+t_ca_sec = time_sec[closest_idx]  # seconds from start
 
 # Exclusion window
 delta_t = X_min * 60.0  # seconds
-mask = (time_sec < t_ca_sec - delta_t) | (time_sec > t_ca_sec + delta_t)
+t_start = t_ca_sec - delta_t
+t_end   = t_ca_sec + delta_t
+
+# Mask for quiet parts (outside exclusion window)
+mask = (time_sec < t_start) | (time_sec > t_end)
 
 # --- POLYNOMIAL FITS ---
 # Fit each component separately using only quiet parts
@@ -205,26 +212,24 @@ By_fit = np.polyval(coeffs_By[::-1], time_sec)
 Bz_fit = np.polyval(coeffs_Bz[::-1], time_sec)
 B_fit = np.sqrt(Bx_fit**2 + By_fit**2 + Bz_fit**2)
 
-# --- SPATIAL LENGTH OF EXCLUDED INTERVAL ---
-  # km/s (approx constant near CA)
-speed = 8 # in km/s
+# --- RADIAL DISTANCE AND ALTITUDE ---
+# km (approx constant near CA)
+speed = 8  # km/s
 
+r = np.sqrt(x**2 + y**2 + z**2) * R_moon  # radial distance from moon center (km)
+altitude = r - R_moon                      # altitude above moon surface
 
-# Radial distance from Europa's center (km) and altitude (km)
-r = np.sqrt(x**2 + y**2 + z**2) * R_moon
-altitude = r - R_moon
-
-# Exclusion window times
-t_start = t_ca_sec - delta_t
-t_end   = t_ca_sec + delta_t
-
-# Interpolate altitude and coordinates at exclusion start
+# Interpolate altitude and coordinates at exclusion start, CA, and end
 alt_start = np.interp(t_start, time_sec, altitude)
 x_start   = np.interp(t_start, time_sec, x)
 y_start   = np.interp(t_start, time_sec, y)
 z_start   = np.interp(t_start, time_sec, z)
 
-# Interpolate altitude and coordinates at exclusion end
+alt_ca = np.interp(t_ca_sec, time_sec, altitude)
+x_ca = np.interp(t_ca_sec, time_sec, x)
+y_ca = np.interp(t_ca_sec, time_sec, y)
+z_ca = np.interp(t_ca_sec, time_sec, z)
+
 alt_end = np.interp(t_end, time_sec, altitude)
 x_end   = np.interp(t_end, time_sec, x)
 y_end   = np.interp(t_end, time_sec, y)
@@ -234,74 +239,115 @@ z_end   = np.interp(t_end, time_sec, z)
 print("=== Exclusion Window Boundaries ===")
 print(f"Start: Altitude = {alt_start:.1f} km ({alt_start/R_moon:.2f} R units), "
       f"Coords = ({x_start:.3f}, {y_start:.3f}, {z_start:.3f}) R units")
+print(f"Closest Approach: Altitude= {alt_ca:.1f} km ({alt_ca/R_moon:.2f} R units), "
+      f"Coords= ({x_ca:.3f}, {y_ca:.3f}, {z_ca:.3f}) R units")
 print(f"End:   Altitude = {alt_end:.1f} km ({alt_end/R_moon:.2f} R units), "
       f"Coords = ({x_end:.3f}, {y_end:.3f}, {z_end:.3f}) R units")
 
-
-
+# --- PLOTS OF FIT AND DATA (with datetime axis) ---
 fig, axs = plt.subplots(4, 1, figsize=(10, 12), sharex=True)
-axs[0].plot(time_sec/3600, BX, 'k', label='Bx data')
-axs[0].plot(time_sec/3600, Bx_fit, 'r--', label='Bx fit')
-axs[0].legend(); axs[0].set_ylabel('Bx (nT)')
 
-axs[1].plot(time_sec/3600, BY, 'b', label='By data')
-axs[1].plot(time_sec/3600, By_fit, 'r--', label='By fit')
-axs[1].legend(); axs[1].set_ylabel('By (nT)')
+# Bx
+axs[0].plot(timeUTC, BX, 'k', label='Bx data')
+axs[0].plot(timeUTC, Bx_fit, 'r--', label='Bx fit')
+axs[0].set_ylabel('Bx (nT)')
+axs[0].legend()
+axs[0].grid(True)
 
-axs[2].plot(time_sec/3600, BZ, 'm', label='Bz data')
-axs[2].plot(time_sec/3600, Bz_fit, 'r--', label='Bz fit')
-axs[2].legend(); axs[2].set_ylabel('Bz (nT)')
-axs[2].set_xlabel('Time since start (hours)')
+# By
+axs[1].plot(timeUTC, BY, 'b', label='By data')
+axs[1].plot(timeUTC, By_fit, 'r--', label='By fit')
+axs[1].set_ylabel('By (nT)')
+axs[1].legend()
+axs[1].grid(True)
 
-axs[3].plot(time_sec/3600, BTot, 'r', label='B data')
-axs[3].plot(time_sec/3600, B_fit, 'r--', label='B fit')
-axs[3].legend(); axs[3].set_ylabel('B (nT)')
-axs[3].set_xlabel('Time since start (hours)')
+# Bz
+axs[2].plot(timeUTC, BZ, 'm', label='Bz data')
+axs[2].plot(timeUTC, Bz_fit, 'r--', label='Bz fit')
+axs[2].set_ylabel('Bz (nT)')
+axs[2].legend()
+axs[2].grid(True)
 
-axs[-1].set_xlim(0,flyby_duration_hours)
-plt.tight_layout()
-plt.show()
+# Total B
+axs[3].plot(timeUTC, BTot, 'r', label='B data')
+axs[3].plot(timeUTC, B_fit, 'r--', label='B fit')
+axs[3].set_ylabel('B (nT)')
+axs[3].legend()
+axs[3].grid(True)
+axs[3].set_xlabel('Time (UTC)')
 
-""" Residual calculations """
+# Format x-axis with hours and minutes
+for ax in axs:
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+    ax.xaxis.set_major_locator(mdates.MinuteLocator(byminute=range(0, 60, 5)))
+    ax.tick_params(axis='x', rotation=45)
 
-Bx_res = BX-Bx_fit
-By_res = BY-By_fit
-Bz_res = BZ-Bz_fit
-B_res = BTot-B_fit
-
-# --- PLOT DIAGNOSTIC ---
-fig, axs = plt.subplots(4, 1, figsize=(10, 12), sharex=True)
-axs[0].plot(time_sec/3600, Bx_res, 'k', label='Bx data')
-axs[0].legend(); axs[0].set_ylabel('Bx (nT)')
-
-axs[1].plot(time_sec/3600, By_res, 'b', label='By data')
-axs[1].legend(); axs[1].set_ylabel('By (nT)')
-
-axs[2].plot(time_sec/3600, Bz_res, 'm', label='Bz data')
-axs[2].legend(); axs[2].set_ylabel('Bz (nT)')
-
-axs[3].plot(time_sec/3600, B_res, 'r', label='B data')
-axs[3].legend(); axs[3].set_ylabel('B (nT)')
-
-axs[-1].set_xlim(0,flyby_duration_hours)
+# Add vertical line for closest approach
+closest_approach_time = timeUTC[closest_idx]
+for i, ax in enumerate(axs):
+    ax.axvline(x=closest_approach_time, color='black', linestyle='--',
+               label='Closest Approach (CA)' if i == 0 else None)
 
 plt.tight_layout()
 plt.show()
 
+# --- RESIDUAL CALCULATION ---
+Bx_res = BX - Bx_fit
+By_res = BY - By_fit
+Bz_res = BZ - Bz_fit
+B_res = BTot - B_fit
+
+# --- RESIDUAL PLOTS (with datetime axis) ---
+fig, axs = plt.subplots(4, 1, figsize=(10, 12), sharex=True)
+
+# Bx residual
+axs[0].plot(timeUTC, Bx_res, 'k', label='Bx residual')
+axs[0].set_ylabel('Bx (nT)')
+axs[0].legend()
+axs[0].grid(True)
+
+# By residual
+axs[1].plot(timeUTC, By_res, 'b', label='By residual')
+axs[1].set_ylabel('By (nT)')
+axs[1].legend()
+axs[1].grid(True)
+
+# Bz residual
+axs[2].plot(timeUTC, Bz_res, 'm', label='Bz residual')
+axs[2].set_ylabel('Bz (nT)')
+axs[2].legend()
+axs[2].grid(True)
+
+# Total B residual
+axs[3].plot(timeUTC, B_res, 'r', label='B residual')
+axs[3].set_ylabel('B (nT)')
+axs[3].legend()
+axs[3].grid(True)
+axs[3].set_xlabel('Time (UTC)')
+
+# Format x-axis with hours and minutes
+for ax in axs:
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+    ax.xaxis.set_major_locator(mdates.MinuteLocator(byminute=range(0, 60, 5)))
+    ax.tick_params(axis='x', rotation=45)
+
+# Vertical line for closest approach
+for i, ax in enumerate(axs):
+    ax.axvline(x=closest_approach_time, color='black', linestyle='--',
+               label='Closest Approach (CA)' if i == 0 else None)
+
+plt.tight_layout()
+plt.show()
+
+
+# --- SAVE RESIDUALS TO FILE ---
 output_filename = f"Residuals_{title_label.replace(' ', '_')}.txt"
-
-# Prepare a dataframe to hold residuals
-residuals_data = {  # Convert seconds to hours
+residuals_data = {
     "Bx_residuals (nT)": Bx_res,
     "By_residuals (nT)": By_res,
     "Bz_residuals (nT)": Bz_res,
     "B_residuals (nT)": B_res
 }
-
-# Create a DataFrame from the residuals
 residuals_df = pd.DataFrame(residuals_data)
-
-# Save the DataFrame to a .txt file
 residuals_df.to_csv(output_filename, sep='\t', index=False)
-
 print(f"Residuals saved to {output_filename}")

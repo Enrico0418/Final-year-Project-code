@@ -80,17 +80,17 @@ time_diff = timestamps - start_time  # This will give a Timedelta
 timeUTC = mdates.date2num(df[0])
 
 
+colat = np.radians(90-theta)
+east_long = np.radians(phi)
 
 
 jm.Internal.Config(Model="jrm33",CartesianIn=False,CartesianOut=False)
-Bjr,Bjt,Bjp = jm.Internal.Field(r, theta, phi)
+Bjr,Bjt,Bjp = jm.Internal.Field(r, colat, east_long)
 
 #be sure to configure external field model prior to tracing
 jm.Con2020.Config(equation_type='analytic')
 #this may also become necessary with internal models in future, e.g.
 #setting the model degree
-colat = np.radians(90-theta)
-east_long = np.radians(phi)
 
 sph_model = con2020.Model(equation_type='analytic', CartesianIn=False,CartesianOut=False)
 

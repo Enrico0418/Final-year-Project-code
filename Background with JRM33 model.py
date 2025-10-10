@@ -1,0 +1,147 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Oct 10 10:57:36 2025
+
+@author: march
+"""
+
+import JupiterMag as jm
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import os
+from datetime import datetime
+import matplotlib.dates as mdates
+from matplotlib.patches import Circle
+from numpy.polynomial import Polynomial
+import con2020
+
+flyby_file = input("Enter flyby file").strip()
+
+Europa_list = {"ORB04_EUR_SYS3.TAB", "ORB11_EUR_EPHIO.TAB", 
+               "ORB12_EUR_EPHIO.TAB", "ORB14_EUR_EPHIO.TAB", 
+               "ORB15_EUR_EPHIO.TAB", "ORB17_EUR_EPHIO.TAB", 
+               "ORB19_EUR_EPHIO.TAB", "ORB25_EUR_EPHIO.TAB", 
+               "ORB25_EUR_EPHIO.TAB",}
+Callisto_list = {"ORB03_CALL_CPHIO.TAB", "ORB09_CALL_CPHIO.TAB", 
+                 "ORB10_CALL_CPHIO.TAB", "ORB21_CALL_CPHIO.TAB", 
+                 "ORB22_CALL_CPHIO.TAB", "ORB23_CALL_CPHIO.TAB", 
+                 "ORB30_CALL_CPHIO.TAB"}
+Ganymede_list = {"ORB01_GAN_GPHIO.TAB", "ORB02_GAN_GPHIO.TAB", 
+                 "ORB07_GAN_GPHIO.TAB", "ORB08_GAN_GPHIO.TAB", 
+                 "ORB09_GAN_GPHIO.TAB", "ORB12_GAN_GPHIO.TAB", 
+                 "ORB28_GAN_GPHIO.TAB", "ORB29_GAN_GPHIO.TAB"}
+Io_list = {"ORB00_IO_IPHIO.TAB", "ORB24_IO_IPHIO.TAB", 
+           "ORB27_IO_IPHIO.TAB", "ORB31_IO_IPHIO.TAB", 
+           "ORB32_IO_IPHIO.TAB"}
+
+base_name = os.path.basename(flyby_file)
+name_parts = os.path.splitext(base_name)[0].split('_')
+
+orbit_name = name_parts[0]
+moon_name = name_parts[1]
+
+orbit_number = ''.join(filter(str.isdigit, orbit_name))
+moon_full_names = {
+    "EUR": "Europa",
+    "IO": "Io",
+    "GAN": "Ganymede",
+    "CAL": "Callisto"
+}
+
+moon_full = moon_full_names.get(moon_name.upper(), moon_name.capitalize())
+
+# Final formatted title string
+title_label = f"Orbit {orbit_number} of {moon_full}"
+
+df = pd.read_csv(flyby_file, delim_whitespace=True, header=None)
+
+# Assign all the columns to a variable
+df[0] = df[0].apply(lambda x: datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%f'))
+df['time'] = df[0].dt.strftime('%H:%M')  # Optional human-readable for table
+time = df[0].to_numpy()
+BR = df[1].to_numpy()   # Second column for Bx
+BT = df[2].to_numpy()   # Third column for By
+BP = df[3].to_numpy()   # Fourth column for Bz
+BTot = df[4].to_numpy() # Fifth column for B Total
+r = df[5].to_numpy()  # 3rd last column for x
+theta = df[6].to_numpy()  # 2nd last column for y
+phi = df[7].to_numpy()  # Last column for z
+
+# Calculate the distance from the surface of Europa
+distance_from_surface = r - 1  # Distance from the surface, Europa centre of mass 0,0,0)
+
+# Convert the time to datetime (assuming it's already in a suitable format)
+timestamps = pd.to_datetime(time)
+
+# Convert timestamps to UTC hours (relative to the start time)
+start_time = timestamps[0]
+time_diff = timestamps - start_time  # This will give a Timedelta
+timeUTC = mdates.date2num(df[0])
+
+
+
+
+jm.Internal.Config(Model="jrm33",CartesianIn=False,CartesianOut=False)
+Bjr,Bjt,Bjp = jm.Internal.Field(r, theta, phi)
+
+#be sure to configure external field model prior to tracing
+jm.Con2020.Config(equation_type='analytic')
+#this may also become necessary with internal models in future, e.g.
+#setting the model degree
+colat = np.radians(90-theta)
+east_long = np.radians(phi)
+
+sph_model = con2020.Model(equation_type='analytic', CartesianIn=False,CartesianOut=False)
+
+# --- PLOTS OF FIT AND DATA (with datetime axis) ---
+fig, axs = plt.subplots(3, 1, figsize=(10, 12), sharex=True)
+
+Bpol = sph_model.Field(r,colat,east_long)
+Bcr = Bpol[:, 0]
+Bct = Bpol[:, 1]
+Bcp = Bpol[:, 2]
+
+Br_model = Bjr +Bcr
+Bt_model = Bjt +Bct
+Bp_model = Bjp +Bcp
+
+
+# Bx
+axs[0].plot(timeUTC, BR, 'k', label='Bx data')
+axs[0].plot(timeUTC, Br_model, 'r--', label='Bx fit')
+axs[0].set_ylabel('Bx (nT)')
+axs[0].legend()
+axs[0].grid(True)
+
+# By
+axs[1].plot(timeUTC, BT, 'b', label='By data')
+axs[1].plot(timeUTC, Bt_model, 'r--', label='By fit')
+axs[1].set_ylabel('By (nT)')
+axs[1].legend()
+axs[1].grid(True)
+
+# Bz
+axs[2].plot(timeUTC, BP, 'm', label='Bz data')
+axs[2].plot(timeUTC, Bp_model, 'r--', label='Bz fit')
+axs[2].set_ylabel('Bz (nT)')
+axs[2].legend()
+axs[2].grid(True)
+
+
+# Format x-axis with hours and minutes
+for ax in axs:
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+    ax.xaxis.set_major_locator(mdates.MinuteLocator(byminute=range(0, 60, 5)))
+    ax.tick_params(axis='x', rotation=45)
+
+closest_idx = np.argmin(distance_from_surface)
+
+# Add vertical line for closest approach
+closest_approach_time = timeUTC[closest_idx]
+for i, ax in enumerate(axs):
+    ax.axvline(x=closest_approach_time, color='black', linestyle='--',
+               label='Closest Approach (CA)' if i == 0 else None)
+
+plt.tight_layout()
+plt.show()

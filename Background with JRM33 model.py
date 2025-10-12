@@ -12,7 +12,6 @@ import pandas as pd
 import os
 from datetime import datetime
 import matplotlib.dates as mdates
-from matplotlib.patches import Circle
 from numpy.polynomial import Polynomial
 import con2020
 
@@ -84,7 +83,7 @@ phi = df[7].to_numpy()  # Last column for z
 # Calculate the distance from the surface of Europa
 distance_from_surface = r - 1  # Distance from the surface, Europa centre of mass 0,0,0)
 
-# Convert the time to datetime (assuming it's already in a suitable format)
+# Convert the time to datetime 
 timestamps = pd.to_datetime(time)
 
 # Convert timestamps to UTC hours (relative to the start time)
@@ -109,7 +108,7 @@ sph_model = con2020.Model(equation_type='analytic', CartesianIn=False,CartesianO
 
 # --- PLOTS OF FIT AND DATA (with datetime axis) ---
 fig, axs = plt.subplots(3, 1, figsize=(10, 12), sharex=True)
-
+fig.suptitle(f'Magnetic field measurments of Galileo during {title_label} + various models for the background magnetic field')
 
 Bpol = sph_model.Field(r,colat,east_long)
 Bcr = Bpol[:, 0]
@@ -163,7 +162,6 @@ coeffs_Bz = Polynomial.fit(time_sec[mask], Bz[mask], deg=Y).convert().coef
 Bx_fit = np.polyval(coeffs_Bx[::-1], time_sec)  # reverse for np.polyval
 By_fit = np.polyval(coeffs_By[::-1], time_sec)
 Bz_fit = np.polyval(coeffs_Bz[::-1], time_sec)
-B_fit = np.sqrt(Bx_fit**2 + By_fit**2 + Bz_fit**2)
 
 # Bx
 axs[0].plot(timeUTC, Bx, 'm', label='Bx data')
@@ -205,5 +203,3 @@ for ax in axs:
 
 plt.tight_layout()
 plt.show()
-
-

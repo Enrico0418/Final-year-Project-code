@@ -15,7 +15,8 @@ import matplotlib.dates as mdates
 from numpy.polynomial import Polynomial
 import con2020
 
-flyby_file = input("Enter flyby file").strip()
+flyby_file = input("Enter SYS3 flyby file").strip()
+background_file = input("Enter corresponding moon-centered flyby file").strip()
 
 Europa_list = {"ORB04_EUR_EPHIO.TAB", "ORB11_EUR_EPHIO.TAB", 
                "ORB12_EUR_EPHIO.TAB", "ORB14_EUR_EPHIO.TAB", 
@@ -80,9 +81,6 @@ r = df[5].to_numpy()  # 3rd last column for x
 theta = df[6].to_numpy()  # 2nd last column for y
 phi = df[7].to_numpy()  # Last column for z
 
-# Calculate the distance from the surface of Europa
-distance_from_surface = r - 1  # Distance from the surface, Europa centre of mass 0,0,0)
-
 # Convert the time to datetime 
 timestamps = pd.to_datetime(time)
 
@@ -106,9 +104,6 @@ jm.Con2020.Config(equation_type='analytic')
 
 sph_model = con2020.Model(equation_type='analytic', CartesianIn=False,CartesianOut=False)
 
-# --- PLOTS OF FIT AND DATA (with datetime axis) ---
-fig, axs = plt.subplots(3, 1, figsize=(10, 12), sharex=True)
-fig.suptitle(f'Magnetic field measurments of Galileo during {title_label} + various models for the background magnetic field')
 
 Bpol = sph_model.Field(r,colat,east_long)
 Bcr = Bpol[:, 0]
@@ -136,6 +131,17 @@ Bjt_model *= -1
 X_min = 10   # half-window size in minutes (adjust as needed)
 Y = 1        # polynomial degree (adjust as needed)
 
+pf = pd.read_csv(background_file, delim_whitespace=True, header=None)
+
+
+x = pf[5].to_numpy()  # 3rd last column for x
+y = pf[6].to_numpy()  # 2nd last column for y
+z = pf[7].to_numpy()  # Last column for z
+
+# Calculate the distance from the surface of the moon
+distance_from_surface = np.sqrt(x**2 + y**2 + z**2) - 1  # Distance from the surface, moon centre of mass 0,0,0)
+
+
 # --- TIME HANDLING ---
 # Convert times to seconds relative to start
 time_sec = (timestamps - start_time).total_seconds().to_numpy()
@@ -148,6 +154,16 @@ t_ca_sec = time_sec[closest_idx]  # seconds from start
 delta_t = X_min * 60.0  # seconds
 t_start = t_ca_sec - delta_t
 t_end   = t_ca_sec + delta_t
+
+# Compute datetime values
+t_start_dt = start_time + pd.to_timedelta(t_start, unit='s')
+t_end_dt   = start_time + pd.to_timedelta(t_end, unit='s')
+
+# Convert to matplotlib date numbers
+t_data_start = mdates.date2num(timestamps[0])
+t_data_end   = mdates.date2num(timestamps[-1])
+t_start_num  = mdates.date2num(t_start_dt)
+t_end_num    = mdates.date2num(t_end_dt)
 
 # Mask for quiet parts (outside exclusion window)
 mask = (time_sec < t_start) | (time_sec > t_end)
@@ -162,6 +178,11 @@ coeffs_Bz = Polynomial.fit(time_sec[mask], Bz[mask], deg=Y).convert().coef
 Bx_fit = np.polyval(coeffs_Bx[::-1], time_sec)  # reverse for np.polyval
 By_fit = np.polyval(coeffs_By[::-1], time_sec)
 Bz_fit = np.polyval(coeffs_Bz[::-1], time_sec)
+
+
+# --- PLOTS OF FIT AND DATA (with datetime axis) ---
+fig, axs = plt.subplots(3, 1, figsize=(10, 12), sharex=True)
+fig.suptitle(f'Magnetic field measurments of Galileo during {title_label} + various models for the background magnetic field')
 
 # Bx
 axs[0].plot(timeUTC, Bx, 'm', label='Bx data')
@@ -194,11 +215,13 @@ axs[2].legend()
 axs[2].grid(True)
 
 
-# Format x-axis with hours and minutes
+# Format x-axis with hours and minutes + quiet region shading
 for ax in axs:
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
     ax.xaxis.set_major_locator(mdates.MinuteLocator(byminute=range(0, 60, 5)))
     ax.tick_params(axis='x', rotation=45)
+    ax.axvspan(t_data_start, t_start_num, color='gray', alpha=0.3)
+    ax.axvspan(t_end_num, t_data_end, color='gray', alpha=0.3)
 
 
 plt.tight_layout()

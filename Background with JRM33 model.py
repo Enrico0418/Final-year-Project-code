@@ -67,7 +67,7 @@ moon_full = moon_full_names.get(moon_name.upper(), moon_name.capitalize())
 # Final formatted title string
 title_label = f"Orbit {orbit_number} of {moon_full}"
 
-df = pd.read_csv(flyby_file, delim_whitespace=True, header=None)
+df = pd.read_csv(flyby_file, sep='\s+', header=None)
 
 # Assign all the columns to a variable
 df[0] = df[0].apply(lambda x: datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%f'))
@@ -133,7 +133,7 @@ Bjt_model *= -1
 X_min = 10   # half-window size in minutes (adjust as needed)
 Y = 1        # polynomial degree (adjust as needed)
 
-pf = pd.read_csv(background_file, delim_whitespace=True, header=None)
+pf = pd.read_csv(background_file, sep='\s+', header=None)
 
 
 x = pf[5].to_numpy()  # 3rd last column for x
@@ -187,7 +187,7 @@ fig, axs = plt.subplots(3, 1, figsize=(10, 12), sharex=True)
 fig.suptitle(f'Galileo MAG for {title_label} on {flyby_date_str}')
 
 # Bx
-axs[0].plot(timeUTC, Bx, 'm', label='Bx data')
+axs[0].plot(timeUTC, Bx, 'k', label='Bx data')
 axs[0].plot(timeUTC, Bx_fit, 'r--', label='polinomial Fit ')
 axs[0].plot(timeUTC, Bp_model, 'y--', label='JRM33+COS2020')
 axs[0].plot(timeUTC, Bjp_model, 'g--', label='JRM33')
@@ -207,7 +207,7 @@ axs[1].grid(True)
 
 
 # Bz
-axs[2].plot(timeUTC, Bz, 'b', label='Bz data')
+axs[2].plot(timeUTC, Bz, 'k', label='Bz data')
 axs[2].plot(timeUTC, Bz_fit, 'r--', label='polinomial Fit ')
 axs[2].plot(timeUTC, Bt_model, 'y--', label='JRM33+COS2020')
 axs[2].plot(timeUTC, Bjt_model, 'g--', label='JRM33')

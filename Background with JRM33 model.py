@@ -89,6 +89,8 @@ start_time = timestamps[0]
 time_diff = timestamps - start_time  # This will give a Timedelta
 timeUTC = mdates.date2num(df[0])
 
+flyby_date = df[0].iloc[0].date()
+flyby_date_str = flyby_date.strftime("%d %B %Y")
 
 colat = np.radians(90-theta)
 east_long = np.radians(phi)
@@ -182,7 +184,7 @@ Bz_fit = np.polyval(coeffs_Bz[::-1], time_sec)
 
 # --- PLOTS OF FIT AND DATA (with datetime axis) ---
 fig, axs = plt.subplots(3, 1, figsize=(10, 12), sharex=True)
-fig.suptitle(f'Magnetic field measurments of Galileo during {title_label} + various models for the background magnetic field')
+fig.suptitle(f'Galileo MAG for {title_label} on {flyby_date_str}')
 
 # Bx
 axs[0].plot(timeUTC, Bx, 'm', label='Bx data')

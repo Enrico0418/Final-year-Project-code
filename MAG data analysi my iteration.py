@@ -33,7 +33,7 @@ Io_list = {"ORB00_IO_IPHIO.TAB", "ORB24_IO_IPHIO.TAB",
            "ORB27_IO_IPHIO.TAB", "ORB31_IO_IPHIO.TAB", 
            "ORB32_IO_IPHIO.TAB"}
 
-df = pd.read_csv(flyby_file, delim_whitespace=True, header=None)
+df = pd.read_csv(flyby_file, sep='\s+', header=None)
 
 R_moon = 0
 
@@ -91,11 +91,15 @@ start_time = timestamps[0]
 time_diff = timestamps - start_time  # This will give a Timedelta
 timeUTC = mdates.date2num(df[0])
 
+
+flyby_date = df[0].iloc[0].date()
+flyby_date_str = flyby_date.strftime("%d %B %Y")
+
 #timeUTC = df['time']
 
 # Set up the figure with multiple subplots (5 rows, 1 column for magnetic field plots and distance)
 fig, axs = plt.subplots(5, 1, figsize=(10, 20), sharex=True)
-fig.suptitle(f'Magnetic field measurments of Galileo during {title_label}')
+fig.suptitle(f'Galileo MAG for {title_label} on {flyby_date_str}')
 plt.tight_layout(pad=2.0)  # reduce padding between title and subplots
 
 # Plot for Bx
@@ -109,19 +113,19 @@ axs[0].tick_params(axis='x', rotation=45)
 axs[0].grid(True)
 
 # Plot for By
-axs[1].plot(timeUTC, BY, label='By (nT)', color='blue')
+axs[1].plot(timeUTC, BY, label='By (nT)', color='black')
 axs[1].set_ylabel('By (nT)')
 axs[1].tick_params(axis='x', rotation=45)
 axs[1].grid(True)  # Add grid to the second subplot
 
 # Plot for Bz
-axs[2].plot(timeUTC, BZ, label='Bz (nT)', color='purple')
+axs[2].plot(timeUTC, BZ, label='Bz (nT)', color='black')
 axs[2].set_ylabel('Bz (nT)')
 axs[2].tick_params(axis='x', rotation=45)
 axs[2].grid(True)  # Add grid to the third subplot
 
 # Plot for B Total
-axs[3].plot(timeUTC, BTot, label='B Total (nT)', color='red', linestyle='--')
+axs[3].plot(timeUTC, BTot, label='B Total (nT)', color='black', linestyle='--')
 axs[3].set_ylabel('B Total (nT)')
 axs[3].tick_params(axis='x', rotation=45)
 axs[3].grid(True)  # Add grid to the fourth subplot
@@ -142,7 +146,7 @@ for i, ax in enumerate(axs):
 
 # Now, plot the 3D trajectory projections in a separate figure
 fig2, axs2 = plt.subplots(1, 3, figsize=(18, 6))
-fig2.suptitle(f'Trajectory of Galileo Flyby {title_label}', y=0.97)
+fig2.suptitle(f'Galileo MAG for {title_label} on {flyby_date_str}')
 
 # Plot the trajectory in the xy-plane (no gradient, simple scatter plot)
 axs2[0].scatter(x, y, color='black', s=10, label='Trajectory (xy-plane)')
@@ -246,6 +250,7 @@ print(f"End:   Altitude = {alt_end:.1f} km ({alt_end/R_moon:.2f} R units), "
 
 # --- PLOTS OF FIT AND DATA (with datetime axis) ---
 fig, axs = plt.subplots(4, 1, figsize=(10, 12), sharex=True)
+fig.suptitle(f'Galileo MAG for {title_label} on {flyby_date_str}')
 
 # Bx
 axs[0].plot(timeUTC, BX, 'k', label='Bx data')
@@ -255,26 +260,27 @@ axs[0].legend()
 axs[0].grid(True)
 
 # By
-axs[1].plot(timeUTC, BY, 'b', label='By data')
+axs[1].plot(timeUTC, BY, 'k', label='By data')
 axs[1].plot(timeUTC, By_fit, 'r--', label='By fit')
 axs[1].set_ylabel('By (nT)')
 axs[1].legend()
 axs[1].grid(True)
 
 # Bz
-axs[2].plot(timeUTC, BZ, 'm', label='Bz data')
+axs[2].plot(timeUTC, BZ, 'k', label='Bz data')
 axs[2].plot(timeUTC, Bz_fit, 'r--', label='Bz fit')
 axs[2].set_ylabel('Bz (nT)')
 axs[2].legend()
 axs[2].grid(True)
 
 # Total B
-axs[3].plot(timeUTC, BTot, 'r', label='B data')
+axs[3].plot(timeUTC, BTot, 'k', label='B data')
 axs[3].plot(timeUTC, B_fit, 'r--', label='B fit')
 axs[3].set_ylabel('B (nT)')
 axs[3].legend()
 axs[3].grid(True)
 axs[3].set_xlabel('Time (UTC)')
+
 
 # Format x-axis with hours and minutes
 for ax in axs:
@@ -299,6 +305,7 @@ B_res = BTot - B_fit
 
 # --- RESIDUAL PLOTS (with datetime axis) ---
 fig, axs = plt.subplots(4, 1, figsize=(10, 12), sharex=True)
+fig.suptitle(f'B-field residuals for {title_label} on {flyby_date_str}')
 
 # Bx residual
 axs[0].plot(timeUTC, Bx_res, 'k', label='Bx residual')
@@ -307,19 +314,19 @@ axs[0].legend()
 axs[0].grid(True)
 
 # By residual
-axs[1].plot(timeUTC, By_res, 'b', label='By residual')
+axs[1].plot(timeUTC, By_res, 'k', label='By residual')
 axs[1].set_ylabel('By (nT)')
 axs[1].legend()
 axs[1].grid(True)
 
 # Bz residual
-axs[2].plot(timeUTC, Bz_res, 'm', label='Bz residual')
+axs[2].plot(timeUTC, Bz_res, 'k', label='Bz residual')
 axs[2].set_ylabel('Bz (nT)')
 axs[2].legend()
 axs[2].grid(True)
 
 # Total B residual
-axs[3].plot(timeUTC, B_res, 'r', label='B residual')
+axs[3].plot(timeUTC, B_res, 'k', label='B residual')
 axs[3].set_ylabel('B (nT)')
 axs[3].legend()
 axs[3].grid(True)

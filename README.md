@@ -1,1 +1,3 @@
-This repository contains all the code and external files I'll be using for the final year project of my bachelor degree in Physics with Astronomy at DCU. I'll use this repository to keep track of progress in code and changes throughout the duration of the project
+This repository contains all the code and external files I'll be using for the final year project of my bachelor degree in Physics with Astronomy at DCU. I'll use this repository to keep track of progress in code and changes throughout the duration of the project. The Galileo MAG data I'll be using are in the following formats:
+- EPHIO, IPHIO, CPHIO and GPHIO, files in cartesian coordinates centered in the centre of the corresponding moon (z alighned withe the moon/Jupiter spin axis; x aligned with the coronational flow of plasma, and y pointing towards Jupieter)
+- SYS3, files in sperical coordinates centerd in Jupiter

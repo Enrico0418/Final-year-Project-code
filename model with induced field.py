@@ -82,7 +82,7 @@ moon_full = moon_full_names.get(moon_name.upper(), moon_name.capitalize())
 # Final formatted title string
 title_label = f"Orbit {orbit_number} of {moon_full}"
 
-df = pd.read_csv(flyby_file, delim_whitespace=True, header=None)
+df = pd.read_csv(flyby_file, sep='\s+', header=None)
 
 # Assign all the columns to a variable
 df[0] = df[0].apply(lambda x: datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%f'))
@@ -148,7 +148,7 @@ Bjt_model *= -1
 X_min = 10   # half-window size in minutes (adjust as needed)
 Y = 2        # polynomial degree (adjust as needed)
 
-pf = pd.read_csv(background_file, delim_whitespace=True, header=None)
+pf = pd.read_csv(background_file, sep='\s+', header=None)
 
 
 x = pf[5].to_numpy()  # 3rd last column for x
@@ -167,8 +167,8 @@ r = distance_from_surface * R_moon
 
 ind_r *= R_moon
 
-g11 = -6.5 # assuming cond 1 S/m and thikness 100 km
-h11 = 90 # assuming cond 1 S/m and thikness 100 km
+g11 = -5.5 # assuming cond 1 S/m and thikness 100 km
+h11 = 95 # assuming cond 1 S/m and thikness 100 km
 
 B_r_ind = 2 * (R_moon/ind_r)**3 * np.sin(ind_t) * (g11 * np.cos(ind_p) + h11 * np.sin(ind_p))
 B_t_ind = -1 * (R_moon/ind_r)**3 * np.cos(ind_t) * (g11 * np.cos(ind_p) + h11 * np.sin(ind_p))
@@ -212,9 +212,9 @@ Bx_fit = np.polyval(coeffs_Bx[::-1], time_sec)  # reverse for np.polyval
 By_fit = np.polyval(coeffs_By[::-1], time_sec)
 Bz_fit = np.polyval(coeffs_Bz[::-1], time_sec)
 
-B_r_ind = B_r_ind + By_fit
-B_t_ind = B_t_ind + Bz_fit
-B_p_ind = B_p_ind + Bx_fit
+B_r_tot = B_r_ind + By_fit
+B_t_tot = B_t_ind + Bz_fit
+B_p_tot = B_p_ind + Bx_fit
 
 # --- PLOTS OF FIT AND DATA (with datetime axis) ---
 fig, axs = plt.subplots(3, 1, figsize=(10, 12), sharex=True)
@@ -225,7 +225,7 @@ axs[0].plot(timeUTC, Bx, 'k', label='Bx data')
 #axs[0].plot(timeUTC, Bx_fit, 'r--', label='polinomial Fit ')
 #axs[0].plot(timeUTC, Bp_model, 'y--', label='JRM33+CON2020')
 #axs[0].plot(timeUTC, Bjp_model, 'g--', label='JRM33')
-axs[0].plot(timeUTC, B_p_ind, 'b--', label='Induced')
+axs[0].plot(timeUTC, B_p_tot, 'b--', label='Induced')
 axs[0].set_ylabel('Bx (nT)')
 axs[0].legend()
 axs[0].grid(True)
@@ -236,7 +236,7 @@ axs[1].plot(timeUTC, By, 'k', label='By data')
 #axs[1].plot(timeUTC, By_fit, 'r--', label='polinomial Fit ')
 #axs[1].plot(timeUTC, Br_model, 'y--', label='JRM33+CON2020')
 #axs[1].plot(timeUTC, Bjr_model, 'g--', label='JRM33')
-axs[1].plot(timeUTC, B_r_ind, 'b--', label='Induced')
+axs[1].plot(timeUTC, B_r_tot, 'b--', label='Induced')
 axs[1].set_ylabel('By (nT)')
 axs[1].legend()
 axs[1].grid(True)
@@ -247,7 +247,7 @@ axs[2].plot(timeUTC, Bz, 'k', label='Bz data')
 #axs[2].plot(timeUTC, Bz_fit, 'r--', label='polinomial Fit ')
 #axs[2].plot(timeUTC, Bt_model, 'y--', label='JRM33+CON2020')
 #axs[2].plot(timeUTC, Bjt_model, 'g--', label='JRM33')
-axs[2].plot(timeUTC, B_t_ind, 'b--', label='Induced')
+axs[2].plot(timeUTC, B_t_tot, 'b--', label='Induced')
 axs[2].set_ylabel('Bz (nT)')
 axs[2].set_xlabel('Time (UTC)')
 axs[2].legend()

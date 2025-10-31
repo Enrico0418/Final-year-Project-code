@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Oct 17 20:20:39 2025
+Created on Fri Oct 10 17:54:41 2025
 
 @author: Enrico
 """
@@ -144,7 +144,6 @@ Bt_model *= -1
 Bjr_model *= -1
 Bjt_model *= -1
 
-# --- PARAMETERS ---
 X_min = 10   # half-window size in minutes (adjust as needed)
 Y = 2        # polynomial degree (adjust as needed)
 
@@ -167,15 +166,6 @@ r = distance_from_surface * R_moon
 
 ind_r *= R_moon
 
-g11 = -5.5 # assuming cond 1 S/m and thikness 100 km
-h11 = 95 # assuming cond 1 S/m and thikness 100 km
-
-B_r_ind = 2 * (R_moon/ind_r)**3 * np.sin(ind_t) * (g11 * np.cos(ind_p) + h11 * np.sin(ind_p))
-B_t_ind = -1 * (R_moon/ind_r)**3 * np.cos(ind_t) * (g11 * np.cos(ind_p) + h11 * np.sin(ind_p))
-B_p_ind = (R_moon/ind_r)**3 * (g11 * np.sin(ind_p) - h11 * np.cos(ind_p))
-
-
-# --- TIME HANDLING ---
 # Convert times to seconds relative to start
 time_sec = (timestamps - start_time).total_seconds().to_numpy()
 
@@ -212,50 +202,49 @@ Bx_fit = np.polyval(coeffs_Bx[::-1], time_sec)  # reverse for np.polyval
 By_fit = np.polyval(coeffs_By[::-1], time_sec)
 Bz_fit = np.polyval(coeffs_Bz[::-1], time_sec)
 
-B_r_tot = B_r_ind + By_fit
-B_t_tot = B_t_ind + Bz_fit
-B_p_tot = B_p_ind + Bx_fit
 
-# --- PLOTS OF FIT AND DATA (with datetime axis) ---
+conductivity_sets = [ #  (conductivity [S/m], g11, h11)
+    (1.0, -6.2, 90),
+    (3.0, -5.5, 95),
+    (10, -5.0, 97)
+]
+
 fig, axs = plt.subplots(3, 1, figsize=(10, 12), sharex=True)
-fig.suptitle(f'Galileo MAG for {title_label} on {flyby_date_str}')
+fig.suptitle(f'Galileo MAG for {title_label} on {flyby_date_str}', fontsize = 15)
 
-# Bx
+# Original data
 axs[0].plot(timeUTC, Bx, 'k', label='Bx data')
-#axs[0].plot(timeUTC, Bx_fit, 'r--', label='polinomial Fit ')
-#axs[0].plot(timeUTC, Bp_model, 'y--', label='JRM33+CON2020')
-#axs[0].plot(timeUTC, Bjp_model, 'g--', label='JRM33')
-axs[0].plot(timeUTC, B_p_tot, 'b--', label='Induced')
-axs[0].set_ylabel('Bx (nT)')
-axs[0].legend()
-axs[0].grid(True)
-
-
-# By
 axs[1].plot(timeUTC, By, 'k', label='By data')
-#axs[1].plot(timeUTC, By_fit, 'r--', label='polinomial Fit ')
-#axs[1].plot(timeUTC, Br_model, 'y--', label='JRM33+CON2020')
-#axs[1].plot(timeUTC, Bjr_model, 'g--', label='JRM33')
-axs[1].plot(timeUTC, B_r_tot, 'b--', label='Induced')
-axs[1].set_ylabel('By (nT)')
-axs[1].legend()
-axs[1].grid(True)
-
-
-# Bz
 axs[2].plot(timeUTC, Bz, 'k', label='Bz data')
-#axs[2].plot(timeUTC, Bz_fit, 'r--', label='polinomial Fit ')
-#axs[2].plot(timeUTC, Bt_model, 'y--', label='JRM33+CON2020')
-#axs[2].plot(timeUTC, Bjt_model, 'g--', label='JRM33')
-axs[2].plot(timeUTC, B_t_tot, 'b--', label='Induced')
-axs[2].set_ylabel('Bz (nT)')
-axs[2].set_xlabel('Time (UTC)')
-axs[2].legend()
-axs[2].grid(True)
 
+# Use a color palette for different conductivities
+colors = plt.cm.viridis(np.linspace(0, 1, len(conductivity_sets)))
 
-# Format x-axis with hours and minutes + quiet region shading
+for i, (sigma, g11, h11) in enumerate(conductivity_sets):
+    # Compute induced fields
+    B_r_ind = 2 * (R_moon / ind_r) ** 3 * np.sin(ind_t) * (g11 * np.cos(ind_p) + h11 * np.sin(ind_p))
+    B_t_ind = -1 * (R_moon / ind_r) ** 3 * np.cos(ind_t) * (g11 * np.cos(ind_p) + h11 * np.sin(ind_p))
+    B_p_ind = (R_moon / ind_r) ** 3 * (g11 * np.sin(ind_p) - h11 * np.cos(ind_p))
+
+    # Add background fit (as before)
+    B_r_ind = B_r_ind + By_fit
+    B_t_ind = B_t_ind + Bz_fit
+    B_p_ind = B_p_ind + Bx_fit
+
+    # Plot induced fields with conductivity in legend
+    label = f"$\sigma$ = {sigma} S/m"
+    axs[0].plot(timeUTC, B_p_ind, '--', color=colors[i], label=label)
+    axs[1].plot(timeUTC, B_r_ind, '--', color=colors[i], label=label)
+    axs[2].plot(timeUTC, B_t_ind, '--', color=colors[i], label=label)
+
+axs[0].set_ylabel('Bx (nT)', fontsize = 15)
+axs[1].set_ylabel('By (nT)', fontsize = 15)
+axs[2].set_ylabel('Bz (nT)', fontsize = 15)
+axs[2].set_xlabel('Time (UTC)', fontsize = 15)
+
 for ax in axs:
+    ax.legend()
+    ax.grid(True)
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
     ax.xaxis.set_major_locator(mdates.MinuteLocator(byminute=range(0, 60, 5)))
     ax.tick_params(axis='x', rotation=45)

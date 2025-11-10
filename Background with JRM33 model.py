@@ -184,38 +184,45 @@ Bz_fit = np.polyval(coeffs_Bz[::-1], time_sec)
 
 # --- PLOTS OF FIT AND DATA (with datetime axis) ---
 fig, axs = plt.subplots(3, 1, figsize=(10, 12), sharex=True)
-fig.suptitle(f'Galileo MAG for {title_label} on {flyby_date_str}', fontsize = 15)
+fig.suptitle(f'Galileo MAG for {title_label} on {flyby_date_str}', fontsize=15)
+
+# Convert CA time to matplotlib format
+t_ca_dt = start_time + pd.to_timedelta(t_ca_sec, unit='s')
+t_ca_num = mdates.date2num(t_ca_dt)
 
 # Bx
 axs[0].plot(timeUTC, Bx, 'k', label='Bx data')
-axs[0].plot(timeUTC, Bx_fit, 'r--', label='polinomial Fit ')
-axs[0].plot(timeUTC, Bp_model, 'y--', label='JRM33+CON2020')
+axs[0].plot(timeUTC, Bx_fit, 'r--', label='Polynomial Fit')
+axs[0].plot(timeUTC, Bp_model, 'y--', label='JRM33+COS2020')
 axs[0].plot(timeUTC, Bjp_model, 'g--', label='JRM33')
-axs[0].set_ylabel('Bx (nT)', fontsize = 15)
+axs[0].axvline(t_ca_num, color='red', linestyle='--', linewidth=1.5,
+               label='Closest Approach')
+axs[0].set_ylabel('Bx (nT)', fontsize=15)
 axs[0].legend()
 axs[0].grid(True)
 
-
 # By
 axs[1].plot(timeUTC, By, 'k', label='By data')
-axs[1].plot(timeUTC, By_fit, 'r--', label='polinomial Fit ')
-axs[1].plot(timeUTC, Br_model, 'y--', label='JRM33+CON2020')
+axs[1].plot(timeUTC, By_fit, 'r--', label='Polynomial Fit')
+axs[1].plot(timeUTC, Br_model, 'y--', label='JRM33+COS2020')
 axs[1].plot(timeUTC, Bjr_model, 'g--', label='JRM33')
-axs[1].set_ylabel('By (nT)', fontsize = 15)
+axs[1].axvline(t_ca_num, color='red', linestyle='--', linewidth=1.5,
+               label='Closest Approach')
+axs[1].set_ylabel('By (nT)', fontsize=15)
 axs[1].legend()
 axs[1].grid(True)
 
-
 # Bz
 axs[2].plot(timeUTC, Bz, 'k', label='Bz data')
-axs[2].plot(timeUTC, Bz_fit, 'r--', label='polinomial Fit ')
-axs[2].plot(timeUTC, Bt_model, 'y--', label='JRM33+CON2020')
+axs[2].plot(timeUTC, Bz_fit, 'r--', label='Polynomial Fit')
+axs[2].plot(timeUTC, Bt_model, 'y--', label='JRM33+COS2020')
 axs[2].plot(timeUTC, Bjt_model, 'g--', label='JRM33')
-axs[2].set_ylabel('Bz (nT)', fontsize = 15)
-axs[2].set_xlabel('Time (UTC)', fontsize = 15)
+axs[2].axvline(t_ca_num, color='red', linestyle='--', linewidth=1.5,
+               label='Closest Approach')
+axs[2].set_ylabel('Bz (nT)', fontsize=15)
+axs[2].set_xlabel('Time (UTC)', fontsize=15)
 axs[2].legend()
 axs[2].grid(True)
-
 
 # Format x-axis with hours and minutes + quiet region shading
 for ax in axs:
@@ -224,7 +231,6 @@ for ax in axs:
     ax.tick_params(axis='x', rotation=45)
     ax.axvspan(t_data_start, t_start_num, color='gray', alpha=0.3)
     ax.axvspan(t_end_num, t_data_end, color='gray', alpha=0.3)
-
 
 plt.tight_layout()
 plt.show()

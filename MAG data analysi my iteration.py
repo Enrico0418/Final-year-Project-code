@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Oct 31 14:53:14 2025
-
-@author: march
-"""
-
-# -*- coding: utf-8 -*-
-"""
 Created on Sat Sep 27 15:30:55 2025
 
 @author: Enrico
@@ -202,8 +195,6 @@ By_fit = np.polyval(coeffs_By[::-1], time_sec)
 Bz_fit = np.polyval(coeffs_Bz[::-1], time_sec)
 B_fit = np.sqrt(Bx_fit**2 + By_fit**2 + Bz_fit**2)
 
-# --- RADIAL DISTANCE AND ALTITUDE ---
-# km (approx constant near CA)
 speed = 8  # km/s
 
 r = np.sqrt(x**2 + y**2 + z**2) * R_moon  # radial distance from moon center (km)
@@ -234,7 +225,7 @@ print(f"Closest Approach: Altitude= {alt_ca:.1f} km ({alt_ca/R_moon:.2f} R units
 print(f"End:   Altitude = {alt_end:.1f} km ({alt_end/R_moon:.2f} R units), "
       f"Coords = ({x_end:.3f}, {y_end:.3f}, {z_end:.3f}) R units")
 
-# --- PLOTS OF FIT AND DATA (with datetime axis) ---
+
 fig, axs = plt.subplots(4, 1, figsize=(10, 12), sharex=True)
 fig.suptitle(f'Galileo MAG for {title_label} on {flyby_date_str}')
 
@@ -283,13 +274,13 @@ for i, ax in enumerate(axs):
 plt.tight_layout()
 plt.show()
 
-# --- RESIDUAL CALCULATION ---
+
 Bx_res = BX - Bx_fit
 By_res = BY - By_fit
 Bz_res = BZ - Bz_fit
 B_res = BTot - B_fit
 
-# --- RESIDUAL PLOTS (with datetime axis) ---
+
 fig, axs = plt.subplots(4, 1, figsize=(10, 12), sharex=True)
 fig.suptitle(f'B-field residuals for {title_label} on {flyby_date_str}')
 
@@ -332,8 +323,6 @@ for i, ax in enumerate(axs):
 plt.tight_layout()
 plt.show()
 
-
-# --- SAVE RESIDUALS TO FILE ---
 output_filename = f"Residuals_{title_label.replace(' ', '_')}.txt"
 residuals_data = {
     "Bx_residuals (nT)": Bx_res,
